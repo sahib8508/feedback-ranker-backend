@@ -1495,7 +1495,9 @@ def send_direct_email():
             'emailSent': False
         }), 500
     
-    
+@app.route('/')
+def health_check():
+    return jsonify({"status": "healthy", "message": "Feedback Ranker API is running"})    
 @app.route('/api/college_stats', methods=['GET'])
 def get_college_stats():
     try:
