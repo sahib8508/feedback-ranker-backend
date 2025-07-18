@@ -30,7 +30,6 @@ import json
 from datetime import datetime
 import os
 import logging
-import firebase_admin
 from firebase_admin import credentials, firestore, storage
 from dotenv import load_dotenv
 
@@ -89,14 +88,16 @@ def get_firebase_credentials():
 
 cred = get_firebase_credentials()
 if cred:
-    initialize_app(cred)
+    if not firebase_admin._apps:
+        initialize_app(cred, {
+            'storageBucket': 'help-desk-campusconnect.firebasestorage.app'
+        })
     db = firestore.client()
+    bucket = storage.bucket()
 else:
     print("Failed to initialize Firebase")
     db = None
-firebase_admin.initialize_app(cred, {
-    'storageBucket': 'help-desk-campusconnect.firebasestorage.app'  # Replace with your actual Firebase storage bucket name
-})
+    bucket = None
 # Flask Setup
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
