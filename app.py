@@ -44,7 +44,56 @@ load_dotenv()
 huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY")
 if not huggingface_api_key:
     logger.warning("HUGGINGFACE_API_KEY not found in environment variables. Some features may not work.")
-cred = credentials.Certificate("firebase_key.json")
+import os
+import json
+from firebase_admin import credentials, firestore, initialize_app
+
+# Replace this section in your app.py:
+# cred = credentials.Certificate("firebase_key.json")
+
+# With this new code:
+def get_firebase_credentials():
+    """Get Firebase credentials from environment variables"""
+    firebase_config = os.getenv('FIREBASE_CONFIG')
+    
+    if firebase_config:
+        # Parse the JSON string from environment variable
+        try:
+            config_dict = json.loads(firebase_config)
+            return credentials.Certificate(config_dict)
+        except json.JSONDecodeError:
+            print("Error: Invalid FIREBASE_CONFIG JSON format")
+            return None
+    else:
+        # Fallback to individual environment variables
+        config_dict = {
+            "type": "service_account",
+            "project_id": os.getenv('FIREBASE_PROJECT_ID'),
+            "private_key_id": os.getenv('FIREBASE_PRIVATE_KEY_ID'),
+            "private_key": os.getenv('FIREBASE_PRIVATE_KEY', '').replace('\\n', '\n'),
+            "client_email": os.getenv('FIREBASE_CLIENT_EMAIL'),
+            "client_id": os.getenv('FIREBASE_CLIENT_ID'),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.getenv('FIREBASE_CLIENT_CERT_URL')
+        }
+        
+        # Check if all required fields are present
+        required_fields = ['project_id', 'private_key', 'client_email']
+        if all(config_dict.get(field) for field in required_fields):
+            return credentials.Certificate(config_dict)
+        else:
+            print("Error: Missing required Firebase environment variables")
+            return None
+
+cred = get_firebase_credentials()
+if cred:
+    initialize_app(cred)
+    db = firestore.client()
+else:
+    print("Failed to initialize Firebase")
+    db = None
 firebase_admin.initialize_app(cred, {
     'storageBucket': 'help-desk-campusconnect.firebasestorage.app'  # Replace with your actual Firebase storage bucket name
 })
