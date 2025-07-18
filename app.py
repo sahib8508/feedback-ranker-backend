@@ -87,9 +87,10 @@ def get_firebase_credentials():
             return None
 
 cred = get_firebase_credentials()
+
 if cred:
     if not firebase_admin._apps:
-        initialize_app(cred, {
+        firebase_admin.initialize_app(cred, {
             'storageBucket': 'help-desk-campusconnect.firebasestorage.app'
         })
     db = firestore.client()
