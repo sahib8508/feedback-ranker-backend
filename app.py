@@ -90,7 +90,11 @@ except Exception as e:
 
 # Flask Setup
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
+CORS(app, origins=[
+    "http://localhost:3000",  # Keep for local development
+    "https://feedbackranker.netlify.app",  # Your Netlify domain
+    "https://*.netlify.app"  # All Netlify apps (optional)
+])
 
 
 # Email configuration - Use environment variables for security
