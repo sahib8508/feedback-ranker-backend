@@ -14,43 +14,20 @@ import random
 import traceback
 import openai
 from dotenv import load_dotenv
-# from dotenv import load_dotenv
 import logging
 import requests
 import firebase_admin
 from firebase_admin import credentials, firestore
-import logging
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import os
-from firebase_config import initialize_firebase 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import json
-from datetime import datetime
-import os
-import logging
-from firebase_admin import credentials, firestore, storage
-from dotenv import load_dotenv
-
 from flask import redirect
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 load_dotenv()
 huggingface_api_key = os.getenv("HUGGINGFACE_API_KEY")
 if not huggingface_api_key:
     logger.warning("HUGGINGFACE_API_KEY not found in environment variables. Some features may not work.")
-import os
-import json
-from firebase_admin import credentials, firestore, initialize_app
 
-# Replace this section in your app.py:
-# cred = credentials.Certificate("firebase_key.json")
-
-# With this new code:
 def get_firebase_credentials():
     """Get Firebase credentials from environment variables"""
     firebase_config = os.getenv('FIREBASE_CONFIG')
@@ -86,28 +63,35 @@ def get_firebase_credentials():
             print("Error: Missing required Firebase environment variables")
             return None
 
-cred = get_firebase_credentials()
-
-if cred:
+# Initialize Firebase only once
+try:
+    # Check if Firebase is already initialized
     if not firebase_admin._apps:
-        firebase_admin.initialize_app(cred, {
-            'storageBucket': 'help-desk-campusconnect.firebasestorage.app'
-        })
+        cred = get_firebase_credentials()
+        if cred:
+            firebase_admin.initialize_app(cred, {
+                'storageBucket': 'help-desk-campusconnect.firebasestorage.app'
+            })
+            print("Firebase initialized successfully")
+        else:
+            print("Failed to get Firebase credentials")
+            raise Exception("Firebase credentials not available")
+    else:
+        print("Firebase already initialized")
+    
+    # Initialize Firestore and Storage clients
     db = firestore.client()
     bucket = storage.bucket()
-else:
-    print("Failed to initialize Firebase")
+    
+except Exception as e:
+    print(f"Firebase initialization error: {e}")
     db = None
     bucket = None
+
 # Flask Setup
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
 
-# Firebase Init
-
-
-db = firestore.client()
-bucket = storage.bucket()
 
 # Email configuration - Use environment variables for security
 EMAIL_SENDER = os.getenv('EMAIL_SENDER', 'sahibhussain8508@gmail.com')
@@ -115,6 +99,17 @@ EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'oefz xagq fqma ovic')
 @app.route('/')
 def index():
     return jsonify({"status": "API is running"})
+@app.route('/')
+def home():
+    return jsonify({"message": "Help Desk API is running", "status": "success"})
+
+@app.route('/health')
+def health_check():
+    return jsonify({
+        "status": "healthy",
+        "firebase_initialized": db is not None,
+        "storage_initialized": bucket is not None
+    })
 @app.route('/')
 def home():
     return "Smart College Support System backend is running."
@@ -1666,5 +1661,4 @@ def get_college_stats():
         }), 500
 # Keep this at the end
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(debug=True, host='0.0.0.0', port=8080)
