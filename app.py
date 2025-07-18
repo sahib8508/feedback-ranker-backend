@@ -96,24 +96,41 @@ CORS(app, origins=["http://localhost:3000"], supports_credentials=True)
 # Email configuration - Use environment variables for security
 EMAIL_SENDER = os.getenv('EMAIL_SENDER', 'sahibhussain8508@gmail.com')
 EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD', 'oefz xagq fqma ovic')
-@app.route('/')
-def index():
-    return jsonify({"status": "API is running"})
-@app.route('/')
-def home():
-    return jsonify({"message": "Help Desk API is running", "status": "success"})
+# Clean route definitions - replace your duplicate routes with these
 
-@app.route('/health')
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "status": "healthy",
+        "message": "Smart College Support System backend is running",
+        "api_status": "API is running",
+        "services": {
+            "feedback_ranker": "running",
+            "help_desk": "running"
+        }
+    })
+
+@app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({
         "status": "healthy",
+        "message": "All services are running",
         "firebase_initialized": db is not None,
-        "storage_initialized": bucket is not None
+        "storage_initialized": bucket is not None,
+        "services": {
+            "api": "running",
+            "database": "connected" if db else "disconnected",
+            "storage": "connected" if bucket else "disconnected"
+        }
     })
-@app.route('/')
-def home():
-    return "Smart College Support System backend is running."
 
+@app.route('/api/status', methods=['GET'])
+def api_status():
+    return jsonify({
+        "status": "API is running",
+        "message": "Feedback Ranker API is running",
+        "timestamp": datetime.now().isoformat()
+    })
 @app.route('/api/ai_feedback_summary', methods=['POST'])
 def ai_feedback_summary():
     try:
@@ -1541,9 +1558,7 @@ def send_direct_email():
             'emailSent': False
         }), 500
     
-@app.route('/')
-def health_check():
-    return jsonify({"status": "healthy", "message": "Feedback Ranker API is running"})    
+   
 @app.route('/api/college_stats', methods=['GET'])
 def get_college_stats():
     try:
